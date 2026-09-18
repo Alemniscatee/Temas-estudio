@@ -949,7 +949,7 @@ Estructura la respuesta ÚNICAMENTE en este JSON válido, sin bloques de código
         renderStatus();
 
         if (reserva.length < MAX_RESERVA) {
-          programarReposicion(400); // sigue reponiendo hasta 15/15
+          programarReposicion(3000); // sigue reponiendo hasta 15/15
         } else {
           setRefillStatus('Completa ✓');
         }
@@ -960,7 +960,7 @@ Estructura la respuesta ÚNICAMENTE en este JSON válido, sin bloques de código
           showToast('🔑 API Key de Gemini rechazada. Revísala en ⚙️ Configuración', 'error');
         } else if (e.status === 429) {
           setRefillStatus('Límite de cuota');
-          programarReposicion(60000); // reintento en 1 min
+          programarReposicion(10000); // reintento en 1 min
         } else {
           setRefillStatus('Error de red');
           programarReposicion(20000);
