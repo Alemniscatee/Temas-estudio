@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#121214" />
+  <meta name="description" content="Aprendizaje Aleatorio Inteligente: sortea temas profundos adaptados a mentes analíticas, con reserva offline y reposición automática vía Gemini." />
+  <title>🎲 Random Learning Vault</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E" />
+  <style>
+    /* ============ RESET Y BASE ============ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #121214;
+      --bg-card: #1a1a1f;
+      --bg-raised: #222229;
+      --border: #2d2d36;
+      --text: #e1e1e6;
+      --text-dim: #9a9aa6;
+      --accent: #7c6cf0;
+      --accent-hover: #8d7ef5;
+      --accent-soft: rgba(124, 108, 240, 0.14);
+      --green: #3ddc84;
+      --red: #ff5f6d;
+      --amber: #ffb454;
+      --radius: 14px;
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      background: #121214;
+      color: #e1e1e6;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.55;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ============ HEADER ============ */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(18, 18, 20, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand { display: flex; flex-direction: column; min-width: 0; }
+    .brand h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand .sub { font-size: 0.72rem; color: var(--text-dim); }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+    .net-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-raised);
+      white-space: nowrap;
+    }
+    .net-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); transition: background 0.3s; }
+    .net-badge.online .dot { background: var(--green); box-shadow: 0 0 8px rgba(61, 220, 132, 0.7); }
+
+    .icon-btn {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .icon-btn:active { transform: scale(0.93); }
+    .icon-btn:hover { border-color: var(--accent); }
+
+    /* ============ LAYOUT ============ */
+    main {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ============ STATUS BAR ============ */
+    .status-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .status-chip {
+      flex: 1;
+      min-width: 140px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .status-chip .label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); }
+    .status-chip .value { font-size: 0.95rem; font-weight: 700; }
+    .status-chip .value small { font-weight: 400; color: var(--text-dim); }
+
+    /* ============ CONTROLES ============ */
+    .controls {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    select {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 14px;
+      font-size: 1rem;
+      color: var(--text);
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239a9aa6' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 42px;
+    }
+    select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    .btn {
+      min-height: 52px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.12s, background 0.2s, opacity 0.2s;
+      font-family: inherit;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-ghost { background: var(--bg-raised); color: var(--text-dim); border: 1px solid var(--border); font-size: 0.85rem; min-height: 44px; }
+    .btn-ghost:hover:not(:disabled) { color: var(--red); border-color: var(--red); }
+    .btn-full { width: 100%; }
+
+    /* ============ TARJETA DEL TEMA ============ */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .topic-card .card-head {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .topic-card h2 { font-size: 1.25rem; line-height: 1.3; }
+    .tag {
+      align-self: flex-start;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .topic-body { padding: 16px; display: none; flex-direction: column; gap: 18px; }
+    .topic-card.loaded .topic-body { display: flex; }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .informal { color: var(--text); font-size: 1rem; white-space: pre-line; }
+
+    .deep { color: #cfcfda; font-size: 0.96rem; }
+    .deep p { margin-bottom: 10px; }
+    .deep ul { margin: 8px 0 12px 20px; display: flex; flex-direction: column; gap: 6px; }
+    .deep li::marker { color: var(--accent); }
+    .deep strong { color: var(--text); }
+    .deep code {
+      background: #0e0e11;
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-size: 0.88em;
+      font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    }
+
+    .schema {
+      background: #0c0c10;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      font-family: ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      white-space: pre;
+      overflow-x: auto;
+      color: #b8e0c8;
+    }
+
+    .card-actions { padding: 0 16px 16px; }
+
+    /* ============ SKELETON / LOADING ============ */
+    .skeleton { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
+    .sk {
+      height: 14px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--bg-raised) 25%, #2c2c35 50%, var(--bg-raised) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.3s infinite;
+    }
+    .sk.title { height: 24px; width: 65%; }
+    .sk.line { width: 100%; }
+    .sk.line.short { width: 55%; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ============ SPINNER ============ */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    .spinner.dark { border-color: rgba(124,108,240,0.25); border-top-color: var(--accent); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============ EMPTY STATE ============ */
+    .empty-state {
+      text-align: center;
+      padding: 42px 20px;
+      color: var(--text-dim);
+    }
+    .empty-state .emoji { font-size: 3rem; display: block; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.92rem; max-width: 420px; margin: 0 auto; }
+
+    /* ============ HISTORIAL ============ */
+    .history-card { padding: 6px 0; }
+    .history-card summary {
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .history-card summary::-webkit-details-marker { display: none; }
+    .history-card summary .count { font-size: 0.78rem; color: var(--text-dim); font-weight: 500; }
+    .history-list { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+    .history-item { font-size: 0.85rem; color: var(--text-dim); padding: 7px 10px; border-radius: 8px; background: var(--bg-raised); }
+    .history-item .cat { color: var(--accent); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ============ MODALES ============ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    @media (min-width: 560px) { .modal-overlay { align-items: center; padding: 20px; } }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      width: 100%;
+      max-width: 520px;
+      max-height: 88dvh;
+      overflow-y: auto;
+      padding: 20px;
+      transform: translateY(30px);
+      transition: transform 0.25s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    @media (min-width: 560px) { .modal { border-radius: 18px; } }
+
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-head h3 { font-size: 1.1rem; }
+
+    .modal .help { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 14px; line-height: 1.5; }
+    .modal .help a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: ui-monospace, monospace;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .input-row input { flex: 1; min-width: 0; }
+
+    .key-status { font-size: 0.8rem; margin-bottom: 14px; padding: 8px 12px; border-radius: 8px; background: var(--bg-raised); }
+    .key-status.ok { color: var(--green); }
+    .key-status.missing { color: var(--amber); }
+
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn { flex: 1; min-height: 48px; font-size: 0.9rem; }
+    .btn-danger { background: rgba(255, 95, 109, 0.12); color: var(--red); border: 1px solid rgba(255, 95, 109, 0.35); }
+
+    .about-modal p { font-size: 0.88rem; color: var(--text-dim); margin-bottom: 10px; }
+    .about-modal strong { color: var(--text); }
+
+    /* ============ TOAST ============ */
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg-raised);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      z-index: 200;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      max-width: 90vw;
+      text-align: center;
+      pointer-events: none;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.error { border-color: rgba(255, 95, 109, 0.5); }
+    #toast.success { border-color: rgba(61, 220, 132, 0.5); }
+
+    /* ============ FOOTER ============ */
+    footer {
+      text-align: center;
+      padding: 18px 16px 26px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .hidden { display: none !important; }
+
+    @media (min-width: 640px) {
+      main { padding: 24px 16px; }
+      .topic-card h2 { font-size: 1.5rem; }
+      .brand h1 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header>
+    <div class="brand">
+      <h1>🎲 Learning Vault</h1>
+      <span class="sub">Aprendizaje aleatorio inteligente</span>
+    </div>
+    <div class="header-actions">
+      <span class="net-badge" id="netBadge"><span class="dot"></span><span id="netText">Offline</span></span>
+      <button class="icon-btn" id="btnInfo" title="Acerca de" aria-label="Acerca de la app">ℹ️</button>
+      <button class="icon-btn" id="btnSettings" title="Configuración" aria-label="Configuración">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <main>
+    <!-- Estado de la reserva y conexión -->
+    <div class="status-bar">
+      <div class="status-chip">
+        <span class="label">Reserva</span>
+        <span class="value" id="vaultCount">0/15</span>
+      </div>
+      <div class="status-chip">
+        <span class="label">Temas vistos</span>
+        <span class="value" id="seenCount">0</span>
+      </div>
+      <div class="status-chip">
+        <span class="label">Reposición IA</span>
+        <span class="value" id="refillStatus"><small>Inactiva</small></span>
+      </div>
+    </div>
+
+    <!-- Controles -->
+    <div class="controls">
+      <select id="categorySelect" aria-label="Filtrar por categoría">
+        <option value="ALL" selected>🎲 Todas las Áreas (Random)</option>
+      </select>
+      <button class="btn btn-primary btn-full" id="btnRandom">🎲 Tema Random</button>
+    </div>
+
+    <!-- Zona del tema -->
+    <div id="topicZone">
+      <div class="card empty-state" id="emptyState">
+        <span class="emoji">🧠</span>
+        <p>Pulsa <strong>🎲 Tema Random</strong> para sortear un concepto profundo de la reserva. Con conexión, la IA repone temas en segundo plano hasta mantener 15 disponibles.</p>
+      </div>
+
+      <!-- Esqueleto de carga -->
+      <div class="card skeleton hidden" id="skeleton">
+        <div class="sk title"></div>
+        <div class="sk line"></div>
+        <div class="sk line"></div>
+        <div class="sk line short"></div>
+        <div class="sk line"></div>
+        <div class="sk line short"></div>
+      </div>
+
+      <!-- Tarjeta del tema -->
+      <article class="card topic-card hidden" id="topicCard">
+        <div class="card-head">
+          <span class="tag" id="topicCategory">Categoría</span>
+          <h2 id="topicTitle">Título del tema</h2>
+        </div>
+        <div class="topic-body">
+          <section>
+            <div class="section-label">💡 La idea, sin tecnicismos</div>
+            <p class="informal" id="topicInformal"></p>
+          </section>
+          <section>
+            <div class="section-label">🔬 A fondo: cómo funciona por dentro</div>
+            <div class="deep" id="topicDeep"></div>
+          </section>
+          <section>
+            <div class="section-label">🗺️ Esquema mental</div>
+            <pre class="schema" id="topicSchema"></pre>
+          </section>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-ghost btn-full" id="btnForget">🗑️ Olvidar este tema y sacar otro</button>
+        </div>
+      </article>
+    </div>
+
+    <!-- Historial -->
+    <details class="card history-card">
+      <summary>
+        <span>📚 Historial de temas vistos</span>
+        <span class="count" id="historyCount">0 temas</span>
+      </summary>
+      <div class="history-list" id="historyList"></div>
+    </details>
+  </main>
+
+  <footer>
+    Random Learning Vault · Contenido generado por IA · Todo se guarda localmente en tu dispositivo
+  </footer>
+
+  <!-- ================= MODAL CONFIGURACIÓN ================= -->
+  <div class="modal-overlay" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="settingsTitle">⚙️ Configuración</h3>
+        <button class="icon-btn" id="btnCloseSettings" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="help">
+        Pega tu <strong>API Key de Google Gemini</strong> para que la app pueda reponer temas en segundo plano.
+        Se guarda <strong>solo en tu navegador</strong> (localStorage) y nunca se envía a otro servidor.
+        Consíguela gratis en
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio ↗</a>
+      </p>
+      <div class="key-status missing" id="keyStatus">Sin API Key configurada</div>
+      <div class="input-row">
+        <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off" spellcheck="false" aria-label="API Key de Gemini" />
+        <button class="icon-btn" id="btnToggleKey" title="Mostrar/ocultar" aria-label="Mostrar u ocultar clave">👁️</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="btnDeleteKey">Eliminar</button>
+        <button class="btn btn-primary" id="btnSaveKey">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL ACERCA DE ================= -->
+  <div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="modal about-modal">
+      <div class="modal-head">
+        <h3 id="aboutTitle">ℹ️ Random Learning Vault</h3>
+        <button class="icon-btn" id="btnCloseAbout" aria-label="Cerrar">✕</button>
+      </div>
+      <p><strong>Cómo funciona:</strong> la app mantiene una <strong>reserva local de hasta 15 temas no leídos</strong> en tu navegador. Cuando sorteas, se elige uno que no hayas visto, se marca en el historial y su contenido se elimina de la reserva para liberar memoria.</p>
+      <p><strong>Auto-reposición:</strong> con internet activo y una API Key de Gemini configurada, la reserva se rellena en segundo plano hasta volver a 15/15.</p>
+      <p><strong>Offline:</strong> puedes seguir sorteando los temas ya guardados en la reserva sin conexión. La interfaz funciona 100% offline gracias al Service Worker.</p>
+      <p><strong>Privacidad:</strong> nada sale de tu dispositivo excepto las peticiones de generación a la API de Gemini con tu propia clave.</p>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    'use strict';
+
+    /* ================================================================
+       CONFIGURACIÓN Y CONSTANTES
+    ================================================================ */
+    const LS_VAULT   = 'rlv_reserva';       // Reserva de temas no leídos (máx. 15)
+    const LS_SEEN    = 'temas_vistos';     // Historial de IDs/títulos vistos
+    const LS_APIKEY  = 'rlv_gemini_key';   // API Key de Gemini
+    const MAX_RESERVA = 15;
+
+    const CATEGORIAS = [
+      'Ciencias de la Computación y Programación',
+      'Ingeniería y Mecánica',
+      'Matemáticas Aplicadas y Lógica',
+      'Física (Mecánica, Electromagnetismo, Cuántica)',
+      'Diseño, Modelado 3D y Artes Visuales',
+      'Psicología y Comportamiento Humano',
+      'Economía y Finanzas',
+      'Cine y Narrativa Audiovisual',
+      'Ciencias de la Salud, Biología y Rendimiento Físico',
+      'Lingüística y Comunicación',
+      'Derecho y Ciencias Políticas',
+      'Música y Acústica',
+      'Biología Molecular, Genética y Microbiología',
+      'Filosofía y Ética',
+      'Química y Ciencia de los Materiales',
+      'Historia y Geografía Humana',
+      'Sociología y Antropología',
+      'Ciencias de la Tierra y Ecología',
+      'Arquitectura y Urbanismo',
+      'Astronomía y Cosmología'
+    ];
+
+    const GEMINI_MODEL = 'gemini-3.6-flash';
+
+    /* ================================================================
+       ESTADO
+    ================================================================ */
+    let reserva = [];            // [{id, titulo, categoria, explicacion_informal, profundidad, esquema_visual}]
+    let seenMap = {};            // { id: {titulo, categoria} }
+    let refillTimer = null;      // Timeout de reposición en background
+    let isDrawing = false;
+
+    /* ================================================================
+       HELPERS DE ALMACENAMIENTO
+    ================================================================ */
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        console.warn(`[RLV] localStorage "${key}" corrupto, se reinicia:`, e);
+        return fallback;
+      }
+    }
+
+    function saveJSON(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        // Cuota llena: el contenido de la reserva suele ser lo más pesado
+        console.warn('[RLV] Error al guardar (¿cuota llena?):', e);
+        if (key === LS_VAULT) {
+          reserva.sort((a, b) => (a._peso || 0) - (b._peso || 0));
+          while (reserva.length > 5) reserva.pop();
+          try { localStorage.setItem(key, JSON.stringify(reserva)); showToast('⚠️ Memoria llena: reserva reducida', 'error'); } catch (_) {}
+        }
+      }
+    }
+
+    function saveReserva() { saveJSON(LS_VAULT, reserva); }
+    function saveSeen()    { saveJSON(LS_SEEN, seenMap); }
+
+    function getApiKey() { return localStorage.getItem(LS_APIKEY) || ''; }
+
+    /* ================================================================
+       HELPERS DE UI
+    ================================================================ */
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      vaultCount: $('vaultCount'), seenCount: $('seenCount'), refillStatus: $('refillStatus'),
+      netBadge: $('netBadge'), netText: $('netText'),
+      categorySelect: $('categorySelect'), btnRandom: $('btnRandom'),
+      emptyState: $('emptyState'), skeleton: $('skeleton'), topicCard: $('topicCard'),
+      topicCategory: $('topicCategory'), topicTitle: $('topicTitle'),
+      topicInformal: $('topicInformal'), topicDeep: $('topicDeep'), topicSchema: $('topicSchema'),
+      btnForget: $('btnForget'),
+      historyList: $('historyList'), historyCount: $('historyCount'),
+      settingsModal: $('settingsModal'), aboutModal: $('aboutModal'),
+      keyStatus: $('keyStatus'), apiKeyInput: $('apiKeyInput'),
+      toast: $('toast')
+    };
+
+    let toastTimer = null;
+    function showToast(msg, type = '') {
+      el.toast.textContent = msg;
+      el.toast.className = 'show' + (type ? ' ' + type : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.toast.className = ''; }, 3200);
+    }
+
+    function escapeHTML(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function openModal(m)  { m.classList.add('open'); }
+    function closeModal(m) { m.classList.remove('open'); }
+
+    /* ================================================================
+       RENDER DE ESTADO
+    ================================================================ */
+    function renderStatus() {
+      el.vaultCount.textContent = `${reserva.length}/${MAX_RESERVA}`;
+      el.seenCount.textContent  = String(Object.keys(seenMap).length);
+      el.historyCount.textContent = `${Object.keys(seenMap).length} temas`;
+
+      const online = navigator.onLine;
+      el.netBadge.classList.toggle('online', online);
+      el.netText.textContent = online ? 'Online' : 'Offline';
+
+      // Categorías con stock en reserva → las resalto en el dropdown
+      Array.from(el.categorySelect.options).forEach(opt => {
+        if (opt.value === 'ALL') return;
+        const n = reserva.filter(t => t.categoria === opt.value).length;
+        opt.textContent = n > 0 ? `${opt.value} · ${n}` : opt.value;
+      });
+    }
+
+    function renderHistorial() {
+      const entries = Object.entries(seenMap);
+      el.historyList.innerHTML = entries.length === 0
+        ? '<div class="history-item">Aún no has visto ningún tema. 🎲</div>'
+        : entries
+            .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0))
+            .map(([id, d]) =>
+              `<div class="history-item"><span class="cat">${escapeHTML(d.categoria || '')}</span><br>${escapeHTML(d.titulo || id)}</div>`
+            ).join('');
+    }
+
+    function renderTopic(topic) {
+      el.emptyState.classList.add('hidden');
+      el.skeleton.classList.add('hidden');
+      el.topicCard.classList.remove('hidden');
+      el.topicCard.classList.add('loaded');
+
+      el.topicCategory.textContent = topic.categoria || 'Sin categoría';
+      el.topicTitle.textContent    = topic.titulo || 'Tema sin título';
+      el.topicInformal.textContent = topic.explicacion_informal || 'Sin explicación disponible.';
+
+      // "profundidad" viene como HTML básico confiable (generado por el prompt);
+      // se limpian etiquetas peligrosas antes de inyectarlo.
+      const clean = String(topic.profundidad || '<p>Sin contenido profundo disponible.</p>')
+        .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, '')
+        .replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/javascript\s*:/gi, '');
+      el.topicDeep.innerHTML = clean;
+
+      el.topicSchema.textContent = topic.esquema_visual || '(sin esquema)';
+    }
+
+    function showSkeleton() {
+      el.emptyState.classList.add('hidden');
+      el.topicCard.classList.add('hidden');
+      el.topicCard.classList.remove('loaded');
+      el.skeleton.classList.remove('hidden');
+    }
+
+    function showEmpty(msg) {
+      el.skeleton.classList.add('hidden');
+      el.topicCard.classList.add('hidden');
+      el.topicCard.classList.remove('loaded');
+      el.emptyState.classList.remove('hidden');
+      if (msg) el.emptyState.querySelector('p').innerHTML = msg;
+    }
+
+    /* ================================================================
+       RESERVA: CARGA, SORTEO Y GESTIÓN
+    ================================================================ */
+    function cargarEstado() {
+      reserva = loadJSON(LS_VAULT, []);
+      if (!Array.isArray(reserva)) reserva = [];
+      seenMap = loadJSON(LS_SEEN, {});
+      if (typeof seenMap !== 'object' || seenMap === null) seenMap = {};
+    }
+
+    function filtrarReserva(categoria) {
+      if (categoria === 'ALL') return reserva.slice();
+      return reserva.filter(t => t.categoria === categoria);
+    }
+
+    function sortearTema() {
+      if (isDrawing) return;
+      const categoria = el.categorySelect.value;
+      const pool = filtrarReserva(categoria).filter(t => !seenMap[t.id]);
+
+      if (pool.length === 0) {
+        if (reserva.length === 0) {
+          showEmpty(
+            getApiKey()
+              ? '📦 La reserva está vacía. Con conexión, la IA está reponiendo temas…<br>Inténtalo de nuevo en unos segundos.'
+              : '📦 La reserva está vacía y no hay API Key configurada.<br>Abre <strong>⚙️ Configuración</strong> y añade tu API Key de Gemini para reponer temas automáticamente.'
+          );
+          if (getApiKey() && navigator.onLine) programarReposicion(0);
+        } else {
+          showToast(`⚠️ No hay temas de "${categoria === 'ALL' ? 'ninguna área' : categoria}" sin ver en la reserva`, 'error');
+        }
+        return;
+      }
+
+      isDrawing = true;
+      showSkeleton();
+
+      // Pequeña pausa para que el esqueleto se perciba (UX de sorteo)
+      setTimeout(() => {
+        const idx = Math.floor(Math.random() * pool.length);
+        const tema = pool[idx];
+
+        // 1) Marcar como visto (historial)
+        seenMap[tema.id] = { titulo: tema.titulo, categoria: tema.categoria, ts: Date.now() };
+        saveSeen();
+
+        // 2) Eliminar el contenido extenso de la reserva (liberar memoria)
+        reserva = reserva.filter(t => t.id !== tema.id);
+        saveReserva();
+
+        renderTopic(tema);
+        renderStatus();
+        renderHistorial();
+        isDrawing = false;
+
+        // 3) Repón en segundo plano si hace falta
+        programarReposicion();
+      }, 350);
+    }
+
+    /* ================================================================
+       INTEGRACIÓN CON GEMINI API
+    ================================================================ */
+    function buildPrompt(categoria) {
+      return `Actúa como un mentor y profesor experto. Enséñame un concepto, teoría, efecto, arquitectura o mecanismo profundo sobre la categoría: ${categoria}.
+Requisitos del contenido:
+- Evita temas genéricos o de conocimiento popular básico.
+- Explica la lógica interna de cómo funciona.
+- Usa una analogía clara e informal.
+- Incluye una sección de desarrollo técnico avanzado.
+- Diseña un diagrama o esquema visual conceptual usando caracteres ASCII, símbolos o emojis.
+
+Contexto del estudiante: es una persona analítica, apasionada por el software, la lógica, la ingeniería, el diseño 3D y la creación de sistemas. El tono debe ser informal pero PROFUNDO y riguroso, nunca superficial ni infantil. Prioriza conceptos poco comunes e interesantes.
+
+Estructura la respuesta ÚNICAMENTE en este JSON válido, sin bloques de código markdown:
+{
+  "id": "unic_id_12345",
+  "titulo": "Nombre del concepto o teoría",
+  "categoria": "Categoría exacta",
+  "explicacion_informal": "Explicación clara con analogía",
+  "profundidad": "Desarrollo técnico y profundo con formato HTML básico (p, ul, li, strong)",
+  "esquema_visual": "Esquema o diagrama en texto/ASCII/emojis"
+}`;
+    }
+
+    function extraerJSON(texto) {
+      if (!texto) return null;
+      let t = texto.trim();
+      // Quitar posibles fences ```json ... ```
+      t = t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+      // Recortar al primer '{' y al último '}'
+      const a = t.indexOf('{');
+      const b = t.lastIndexOf('}');
+      if (a === -1 || b === -1 || b <= a) return null;
+      t = t.slice(a, b + 1);
+      try {
+        return JSON.parse(t);
+      } catch (_) {
+        // Fallback: arreglar saltos de línea dentro de strings y JSON con comas colgantes
+        try {
+          return JSON.parse(t.replace(/,\s*([}\]])/g, '$1'));
+        } catch (e2) {
+          console.warn('[RLV] JSON inválido de Gemini:', e2, t.slice(0, 200));
+          return null;
+        }
+      }
+    }
+
+    function validarTema(obj, categoriaEsperada) {
+      if (!obj || typeof obj !== 'object') return null;
+      const titulo = String(obj.titulo || '').trim();
+      const explic = String(obj.explicacion_informal || '').trim();
+      const profund = String(obj.profundidad || '').trim();
+      if (!titulo || !explic || !profund) return null;
+
+      return {
+        id: String(obj.id || '').trim() || `t_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        titulo,
+        categoria: (String(obj.categoria || '').trim() && CATEGORIAS.includes(String(obj.categoria).trim()))
+          ? String(obj.categoria).trim()
+          : categoriaEsperada,
+        explicacion_informal: explic,
+        profundidad: profund,
+        esquema_visual: String(obj.esquema_visual || '').trim(),
+        _peso: Date.now()
+      };
+    }
+
+    async function pedirTemaAGemini(categoria, apiKey) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+      const body = {
+        contents: [{ parts: [{ text: buildPrompt(categoria) }] }],
+        generationConfig: {
+          temperature: 1.0,
+          // gemini-3.6-flash es un modelo de razonamiento: sus tokens de
+          // "thinking" consumen el presupuesto de maxOutputTokens, por lo que
+          // un valor bajo (2048) devuelve respuestas vacías o JSON truncado.
+          // "medium" es el nivel por defecto documentado para 3.6 Flash
+          // (usa "low" si prefieres reposición más rápida y barata).
+          thinkingLevel: 'medium',
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json" // Obliga a Gemini a responder en formato JSON estricto
+        }
+      };
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok) {
+        let detail = '';
+        try { detail = (await resp.json())?.error?.message || ''; } catch (_) {}
+        const err = new Error(`Gemini ${resp.status}: ${detail || resp.statusText}`);
+        err.status = resp.status;
+        throw err;
+      }
+
+      const data = await resp.json();
+
+      // Guardia: si el modelo cortó por presupuesto, el JSON estará incompleto
+      if (data?.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+        const err = new Error('Gemini MAX_TOKENS: respuesta truncada');
+        err.status = 0;
+        throw err;
+      }
+
+      const texto = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+      return extraerJSON(texto);
+    }
+
+    /* ================================================================
+       AUTO-REPOSICIÓN EN SEGUNDO PLANO
+    ================================================================ */
+    function setRefillStatus(texto) {
+      el.refillStatus.innerHTML = `<small>${texto}</small>`;
+    }
+
+    function programarReposicion(delayMs = 800) {
+      clearTimeout(refillTimer);
+      refillTimer = setTimeout(reponerReserva, delayMs);
+    }
+
+    async function reponerReserva() {
+      const apiKey = getApiKey();
+      const faltan = MAX_RESERVA - reserva.length;
+
+      if (!apiKey || !navigator.onLine || faltan <= 0) {
+        if (!apiKey) setRefillStatus('Sin API Key');
+        else if (!navigator.onLine) setRefillStatus('Offline');
+        else setRefillStatus('Completa ✓');
+        return;
+      }
+
+      setRefillStatus(`Reponiendo… (faltan ${faltan})`);
+
+      // Turno aleatorio de categoría para mantener variedad en la reserva
+      const usadas = new Set(reserva.map(t => t.categoria));
+      const candidatos = CATEGORIAS.filter(c => !usadas.has(c));
+      const categoria = (candidatos.length ? candidatos : CATEGORIAS)[Math.floor(Math.random() * (candidatos.length ? candidatos.length : CATEGORIAS.length))];
+
+      try {
+        const raw = await pedirTemaAGemini(categoria, apiKey);
+        const tema = validarTema(raw, categoria);
+
+        if (!tema) throw new Error('Respuesta sin los campos requeridos');
+        if (seenMap[tema.id]) throw new Error('Tema repetido (ya visto)');
+
+        reserva.push(tema);
+        saveReserva();
+        renderStatus();
+
+        if (reserva.length < MAX_RESERVA) {
+          programarReposicion(400); // sigue reponiendo hasta 15/15
+        } else {
+          setRefillStatus('Completa ✓');
+        }
+      } catch (e) {
+        console.warn('[RLV] Reposición falló:', e);
+        if (e.status === 400 || e.status === 401 || e.status === 403) {
+          setRefillStatus('API Key inválida');
+          showToast('🔑 API Key de Gemini rechazada. Revísala en ⚙️ Configuración', 'error');
+        } else if (e.status === 429) {
+          setRefillStatus('Límite de cuota');
+          programarReposicion(60000); // reintento en 1 min
+        } else {
+          setRefillStatus('Error de red');
+          programarReposicion(20000);
+        }
+      }
+    }
+
+    /* ================================================================
+       CONEXIÓN (ONLINE / OFFLINE)
+    ================================================================ */
+    window.addEventListener('online', () => {
+      renderStatus();
+      showToast('🌐 Conexión restablecida', 'success');
+      programarReposicion(1000);
+    });
+    window.addEventListener('offline', () => {
+      renderStatus();
+      setRefillStatus('Offline');
+      showToast('📴 Sin conexión: puedes seguir sorteando de la reserva');
+    });
+
+    /* ================================================================
+       SERVICE WORKER (PWA)
+    ================================================================ */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('[RLV] Service Worker registrado'))
+          .catch(err => console.warn('[RLV] SW no registrado:', err));
+      });
+    }
+
+    /* ================================================================
+       EVENTOS DE UI
+    ================================================================ */
+    el.btnRandom.addEventListener('click', sortearTema);
+    el.btnForget.addEventListener('click', sortearTema);
+
+    // --- Modal Configuración ---
+    $('btnSettings').addEventListener('click', () => {
+      el.apiKeyInput.value = getApiKey();
+      actualizarKeyStatus();
+      openModal(el.settingsModal);
+    });
+    $('btnCloseSettings').addEventListener('click', () => closeModal(el.settingsModal));
+
+    $('btnSaveKey').addEventListener('click', () => {
+      const key = el.apiKeyInput.value.trim();
+      if (!key) { showToast('⚠️ Escribe una API Key válida', 'error'); return; }
+      localStorage.setItem(LS_APIKEY, key);
+      actualizarKeyStatus();
+      showToast('✅ API Key guardada localmente', 'success');
+      closeModal(el.settingsModal);
+      programarReposicion(500);
+    });
+
+    $('btnDeleteKey').addEventListener('click', () => {
+      localStorage.removeItem(LS_APIKEY);
+      el.apiKeyInput.value = '';
+      actualizarKeyStatus();
+      setRefillStatus('Sin API Key');
+      showToast('🗑️ API Key eliminada');
+    });
+
+    $('btnToggleKey').addEventListener('click', () => {
+      el.apiKeyInput.type = el.apiKeyInput.type === 'password' ? 'text' : 'password';
+    });
+
+    el.apiKeyInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('btnSaveKey').click();
+    });
+
+    function actualizarKeyStatus() {
+      const has = !!getApiKey();
+      el.keyStatus.textContent = has ? '✅ API Key configurada (solo en este dispositivo)' : '⚠️ Sin API Key configurada';
+      el.keyStatus.className = 'key-status ' + (has ? 'ok' : 'missing');
+    }
+
+    // --- Modal Acerca de ---
+    $('btnInfo').addEventListener('click', () => openModal(el.aboutModal));
+    $('btnCloseAbout').addEventListener('click', () => closeModal(el.aboutModal));
+
+    // Cerrar modales al tocar el fondo
+    [el.settingsModal, el.aboutModal].forEach(m => {
+      m.addEventListener('click', (e) => { if (e.target === m) closeModal(m); });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { closeModal(el.settingsModal); closeModal(el.aboutModal); }
+    });
+
+    /* ================================================================
+       ARRANQUE
+    ================================================================ */
+    (function init() {
+      // Poblar el dropdown con las 20 categorías
+      CATEGORIAS.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        el.categorySelect.appendChild(opt);
+      });
+
+      cargarEstado();
+      renderStatus();
+      renderHistorial();
+      actualizarKeyStatus();
+
+      if (getApiKey()) programarReposicion(1200);
+    })();
+  </script>
+</body>
+</html>
