@@ -862,17 +862,36 @@ Estructura la respuesta ÚNICAMENTE en este JSON válido, sin bloques de código
       };
     }
 
-    async function pedirTemaAGemini(categoria, apiKey) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-      const body = {
-        contents: [{ parts: [{ text: buildPrompt(categoria) }] }],
-        generationConfig: {
-          temperature: 1.05,
-          maxOutputTokens: 2048,
-          responseMimeType: 'application/json'
-        },
-        safetySettings: []
-      };
+async function pedirTemaAGemini(categoria, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  
+  const body = {
+    contents: [{ parts: [{ text: buildPrompt(categoria) }] }],
+    generationConfig: {
+      temperature: 1.0,
+      maxOutputTokens: 2048,
+      responseMimeType: "application/json" // Obliga a Gemini a responder en formato JSON estricto
+    }
+  };
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    let detail = '';
+    try { detail = (await resp.json())?.error?.message || ''; } catch (_) {}
+    const err = new Error(`Gemini ${resp.status}: ${detail || resp.statusText}`);
+    err.status = resp.status;
+    throw err;
+  }
+
+  const data = await resp.json();
+  const texto = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+  return extraerJSON(texto);
+}
 
       const resp = await fetch(url, {
         method: 'POST',
